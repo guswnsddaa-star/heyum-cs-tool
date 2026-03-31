@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+node_modules/
+server.log
+server-error.log
+.tmp.driveupload/
+.tmp.drivedownload/
+.vercel/
+.DS_Store
+Thumbs.db
