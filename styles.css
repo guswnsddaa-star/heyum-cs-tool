@@ -1,13 +1,16 @@
 :root {
-  --bg: #f7f3ea;
-  --bg-strong: #efe6d6;
-  --panel: rgba(255, 252, 247, 0.88);
-  --line: rgba(64, 47, 31, 0.14);
-  --text: #2f2419;
-  --muted: #715d4b;
-  --accent: #c4642d;
-  --accent-dark: #8c3d13;
-  --shadow: 0 20px 45px rgba(76, 50, 30, 0.12);
+  --bg: #f6f0e6;
+  --bg-strong: #ecdcc3;
+  --panel: rgba(255, 251, 246, 0.8);
+  --panel-strong: rgba(255, 248, 238, 0.96);
+  --line: rgba(70, 45, 21, 0.1);
+  --text: #261b12;
+  --muted: #6b5747;
+  --accent: #cd6c2f;
+  --accent-dark: #8a4117;
+  --accent-soft: rgba(205, 108, 47, 0.12);
+  --shadow: 0 24px 60px rgba(78, 48, 25, 0.12);
+  --shadow-soft: 0 16px 34px rgba(78, 48, 25, 0.08);
 }
 
 * {
@@ -20,8 +23,9 @@ body {
   font-family: "Pretendard", "NanumGothic", "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
   color: var(--text);
   background:
-    radial-gradient(circle at top left, rgba(245, 213, 160, 0.6), transparent 32%),
-    linear-gradient(135deg, #f9f6ef 0%, #f2ebe0 48%, #e7dcc8 100%);
+    radial-gradient(circle at top left, rgba(237, 187, 118, 0.42), transparent 28%),
+    radial-gradient(circle at 85% 12%, rgba(158, 102, 63, 0.18), transparent 22%),
+    linear-gradient(145deg, #faf6ef 0%, #f2ebe1 46%, #e4d7c7 100%);
 }
 
 body.app-locked {
@@ -38,7 +42,7 @@ textarea {
 .page-shell {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 40px 0 48px;
+  padding: 32px 0 56px;
 }
 
 .hero {
@@ -46,7 +50,7 @@ textarea {
   grid-template-columns: 1.6fr 1fr;
   gap: 24px;
   align-items: stretch;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .hero-side {
@@ -61,13 +65,26 @@ textarea {
   border: 1px solid var(--line);
   border-radius: 28px;
   box-shadow: var(--shadow);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
 }
 
 .hero-copy {
   display: flex;
   flex-direction: column;
-  padding: 22px 24px;
+  position: relative;
+  overflow: hidden;
+  padding: 28px;
+}
+
+.hero-copy::before {
+  content: "";
+  position: absolute;
+  inset: auto -40px -40px auto;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(205, 108, 47, 0.18) 0%, rgba(205, 108, 47, 0) 70%);
+  pointer-events: none;
 }
 
 .eyebrow {
@@ -81,9 +98,11 @@ textarea {
 
 .hero h1 {
   margin: 0;
-  font-size: clamp(1.55rem, 3vw, 2.35rem);
-  line-height: 1.12;
-  font-weight: 800;
+  max-width: 11ch;
+  font-size: clamp(2rem, 4vw, 3.3rem);
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: -0.04em;
 }
 
 .hero-signature {
@@ -101,12 +120,70 @@ textarea {
   max-width: 650px;
   color: var(--muted);
   line-height: 1.65;
-  font-size: 0.94rem;
+  font-size: 0.98rem;
+}
+
+.hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.hero-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(138, 65, 23, 0.14);
+  background: rgba(255, 255, 255, 0.68);
+  color: var(--accent-dark);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.hero-highlights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.highlight-card {
+  position: relative;
+  padding: 16px 16px 18px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 247, 239, 0.92) 100%);
+  border: 1px solid rgba(138, 65, 23, 0.12);
+  box-shadow: var(--shadow-soft);
+}
+
+.highlight-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.highlight-card strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 1rem;
+}
+
+.highlight-card p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+  font-size: 0.88rem;
 }
 
 .hero-card {
-  padding: 18px 20px;
-  background: linear-gradient(180deg, #3f2b1f 0%, #5b3a27 100%);
+  padding: 20px 20px 22px;
+  background: linear-gradient(180deg, #342115 0%, #5c3925 100%);
   color: #fff6ed;
   text-decoration: none;
 }
@@ -157,6 +234,59 @@ textarea {
   border: 1px solid var(--line);
   cursor: pointer;
   text-align: left;
+}
+
+.dashboard-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.overview-card {
+  padding: 18px 18px 20px;
+  border-radius: 24px;
+  background: rgba(255, 252, 247, 0.72);
+  border: 1px solid rgba(70, 45, 21, 0.08);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(14px);
+}
+
+.overview-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.overview-card strong {
+  display: block;
+  margin-top: 12px;
+  font-size: 1.12rem;
+  line-height: 1.3;
+}
+
+.overview-card p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+  font-size: 0.9rem;
+}
+
+.overview-card-primary {
+  background: linear-gradient(160deg, rgba(255, 247, 236, 0.96) 0%, rgba(248, 230, 208, 0.95) 100%);
+}
+
+.overview-card-accent {
+  background: linear-gradient(160deg, #4f2f1c 0%, #6b3c21 100%);
+  color: #fff6ee;
+}
+
+.overview-card-accent span,
+.overview-card-accent p {
+  color: rgba(255, 246, 238, 0.82);
 }
 
 .auth-gate {
@@ -236,15 +366,35 @@ textarea {
   padding: 28px;
 }
 
+.panel-dashboard {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 251, 246, 0.92) 0%, rgba(255, 250, 243, 0.82) 100%);
+}
+
+.panel-dashboard::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, rgba(205, 108, 47, 0.9) 0%, rgba(231, 177, 107, 0.82) 100%);
+}
+
 .section-title p {
-  margin: 0 0 6px;
+  margin: 0 0 8px;
   color: var(--accent-dark);
-  font-weight: 700;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .section-title h2 {
-  margin: 0 0 20px;
-  font-size: 1.4rem;
+  margin: 0 0 22px;
+  font-size: 1.55rem;
+  letter-spacing: -0.03em;
 }
 
 .form-grid {
@@ -273,7 +423,7 @@ textarea {
 .advanced-panel {
   border: 1px solid rgba(88, 66, 46, 0.12);
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.78);
   padding: 16px;
 }
 
@@ -328,10 +478,12 @@ textarea {
 }
 
 .decision-box {
-  border: 1px dashed rgba(196, 100, 45, 0.28);
-  border-radius: 18px;
-  background: rgba(255, 248, 239, 0.95);
-  padding: 16px;
+  border: 1px solid rgba(196, 100, 45, 0.16);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 247, 236, 0.94) 0%, rgba(255, 251, 245, 0.98) 100%);
+  padding: 18px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .decision-title {
@@ -348,9 +500,10 @@ textarea {
 }
 
 .decision-item {
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.82);
-  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(88, 66, 46, 0.08);
+  padding: 14px 15px;
 }
 
 .decision-label {
@@ -370,10 +523,10 @@ select,
 textarea {
   width: 100%;
   border: 1px solid rgba(88, 66, 46, 0.18);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.9);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
   color: var(--text);
-  padding: 14px 15px;
+  padding: 15px 16px;
   outline: none;
   transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -396,7 +549,7 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 20px;
+  margin-top: 22px;
 }
 
 .badge-row,
@@ -411,9 +564,9 @@ textarea {
 .copy-button {
   border: 0;
   border-radius: 999px;
-  padding: 12px 18px;
+  padding: 13px 18px;
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 800;
   transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -433,7 +586,7 @@ textarea {
 }
 
 .ghost-button {
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.84);
   color: var(--text);
   border: 1px solid var(--line);
 }
@@ -448,7 +601,7 @@ textarea {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  background: rgba(196, 100, 45, 0.12);
+  background: var(--accent-soft);
   color: var(--accent-dark);
   padding: 8px 12px;
   font-size: 0.9rem;
@@ -458,8 +611,10 @@ textarea {
 .result-box {
   margin-top: 18px;
   min-height: 360px;
-  background: #fffdfa;
+  background: rgba(255, 253, 250, 0.94);
+  border-radius: 22px;
   line-height: 1.75;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
 .result-actions {
@@ -475,9 +630,10 @@ textarea {
 
 .tips-box {
   padding: 18px;
-  border-radius: 20px;
-  background: linear-gradient(180deg, rgba(239, 230, 214, 0.8) 0%, rgba(255, 248, 239, 0.95) 100%);
-  border: 1px solid rgba(88, 66, 46, 0.12);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(243, 235, 222, 0.78) 0%, rgba(255, 250, 243, 0.96) 100%);
+  border: 1px solid rgba(88, 66, 46, 0.1);
+  box-shadow: var(--shadow-soft);
 }
 
 .tips-box h3,
@@ -497,7 +653,12 @@ textarea {
 
 @media (max-width: 960px) {
   .hero,
+  .dashboard-strip,
   .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-highlights {
     grid-template-columns: 1fr;
   }
 }
@@ -513,6 +674,11 @@ textarea {
   .panel {
     padding: 20px;
     border-radius: 22px;
+  }
+
+  .hero h1 {
+    max-width: none;
+    font-size: 2rem;
   }
 
   .auth-card {
