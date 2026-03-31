@@ -1,6 +1,13 @@
+import { isAuthenticated } from "../lib/auth.mjs";
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     sendJson(res, 405, { error: "허용되지 않는 메서드입니다." });
+    return;
+  }
+
+  if (!isAuthenticated(req, process.env)) {
+    sendJson(res, 401, { error: "인증이 필요합니다." });
     return;
   }
 

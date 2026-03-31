@@ -614,15 +614,22 @@ const elements = {
   analysisSummary: document.getElementById("analysisSummary"),
   engineSummary: document.getElementById("engineSummary"),
   scenarioUseCase: document.getElementById("scenarioUseCase"),
-  scenarioSource: document.getElementById("scenarioSource")
+  scenarioSource: document.getElementById("scenarioSource"),
+  authGate: document.getElementById("authGate"),
+  authForm: document.getElementById("authForm"),
+  authPassword: document.getElementById("authPassword"),
+  authSubmit: document.getElementById("authSubmit"),
+  authMessage: document.getElementById("authMessage"),
+  logoutButton: document.getElementById("logoutButton")
 };
 
 initialize();
 
-function initialize() {
+async function initialize() {
   populateProducts();
   attachEvents();
   generateMessage();
+  await refreshAuthState();
 }
 
 function populateProducts() {
@@ -655,6 +662,8 @@ function attachEvents() {
   elements.resetButton.addEventListener("click", resetForm);
   elements.copyButton.addEventListener("click", copyResult);
   elements.copyBottomButton.addEventListener("click", copyResult);
+  elements.authForm.addEventListener("submit", handleAuthSubmit);
+  elements.logoutButton.addEventListener("click", handleLogout);
 }
 
 function generateMessage() {
@@ -744,6 +753,7 @@ async function generateAiMessage() {
   try {
     const response = await fetch("/api/reply", {
       method: "POST",
+      credentials: "same-origin",
       headers: {
         "Content-Type": "application/json"
       },
@@ -751,6 +761,11 @@ async function generateAiMessage() {
     });
 
     const data = await response.json();
+
+    if (response.status === 401) {
+      setAppLocked(true, "비밀번호를 다시 입력해주세요.");
+      throw new Error("인증이 만료되어 다시 로그인해야 합니다.");
+    }
 
     if (!response.ok || !data.ok) {
       throw new Error(data.error || data.message || "AI 응답 생성에 실패했습니다.");
@@ -793,6 +808,95 @@ function standardClosing(managerName) {
   }
 
   return "추가로 궁금하신 점 있으시면 편하게 문의 부탁드립니다.\n감사합니다.";
+}
+
+async function refreshAuthState() {
+  try {
+    const response = await fetch("/api/auth", {
+      method: "GET",
+      credentials: "same-origin"
+    });
+
+    const data = await response.json();
+    setAppLocked(!data.authenticated);
+  } catch {
+    setAppLocked(true, "접속 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.");
+  }
+}
+
+async function handleAuthSubmit(event) {
+  event.preventDefault();
+
+  const password = cleanValue(elements.authPassword.value);
+  if (!password) {
+    setAuthMessage("비밀번호를 입력해주세요.");
+    elements.authPassword.focus();
+    return;
+  }
+
+  elements.authSubmit.disabled = true;
+  elements.authSubmit.textContent = "확인 중...";
+  setAuthMessage("");
+
+  try {
+    const response = await fetch("/api/auth", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ password })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.authenticated) {
+      throw new Error(data.error || "비밀번호가 올바르지 않습니다.");
+    }
+
+    elements.authPassword.value = "";
+    setAppLocked(false);
+  } catch (error) {
+    setAuthMessage(error instanceof Error ? error.message : "로그인에 실패했습니다.");
+    elements.authPassword.select();
+  } finally {
+    elements.authSubmit.disabled = false;
+    elements.authSubmit.textContent = "입장하기";
+  }
+}
+
+async function handleLogout() {
+  try {
+    await fetch("/api/auth", {
+      method: "DELETE",
+      credentials: "same-origin"
+    });
+  } catch {
+    // Even if logout request fails, lock the UI locally.
+  }
+
+  setAppLocked(true, "잠금 상태로 돌아갔습니다.");
+}
+
+function setAppLocked(locked, message = "") {
+  document.body.classList.toggle("app-locked", locked);
+  elements.authGate.hidden = !locked;
+  elements.aiButton.disabled = locked;
+  elements.generateButton.disabled = locked;
+  elements.resetButton.disabled = locked;
+  elements.copyButton.disabled = locked;
+  elements.copyBottomButton.disabled = locked;
+  elements.resultText.readOnly = locked;
+  elements.logoutButton.hidden = locked;
+  setAuthMessage(message);
+
+  if (locked) {
+    elements.authPassword.focus();
+  }
+}
+
+function setAuthMessage(message) {
+  elements.authMessage.textContent = message;
 }
 
 function productLine(productName) {

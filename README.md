@@ -56,6 +56,7 @@ git push -u origin main
 
 - `OPENAI_API_KEY`
 - `OPENAI_MODEL`
+- `APP_PASSWORD`
 
 4. Deploy 실행
 
@@ -64,5 +65,6 @@ git push -u origin main
 ## 보안 주의
 
 - OpenAI API 키는 프론트엔드에 넣지 않습니다.
+- 사이트 접근 비밀번호도 프론트엔드 코드에 넣지 않습니다.
 - `.env`는 GitHub에 올리지 않습니다.
 - 운영 배포에서는 Vercel 환경변수만 사용합니다.

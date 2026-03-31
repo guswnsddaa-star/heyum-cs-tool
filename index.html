@@ -7,6 +7,24 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div id="authGate" class="auth-gate" hidden>
+    <div class="auth-card">
+      <p class="auth-eyebrow">PRIVATE ACCESS</p>
+      <h2>사내 전용 접속</h2>
+      <p class="auth-text">
+        등록된 비밀번호를 입력하면 툴을 사용할 수 있습니다.
+      </p>
+      <form id="authForm" class="auth-form">
+        <label>
+          비밀번호
+          <input id="authPassword" type="password" placeholder="비밀번호를 입력하세요" autocomplete="current-password">
+        </label>
+        <button id="authSubmit" class="primary-button" type="submit">입장하기</button>
+      </form>
+      <p id="authMessage" class="auth-message" aria-live="polite"></p>
+    </div>
+  </div>
+
   <div class="page-shell">
     <header class="hero">
       <div class="hero-copy">
@@ -28,6 +46,7 @@
           <strong>문서 열기</strong>
           <span>Google Docs에서 바로 확인</span>
         </a>
+        <button id="logoutButton" class="hero-card hero-card-soft hero-card-button" type="button">잠금으로 돌아가기</button>
       </div>
     </header>
 

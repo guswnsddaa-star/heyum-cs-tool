@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,9 +26,19 @@ createServer(async (req, res) => {
     const url = new URL(req.url, `http://localhost:${port}`);
 
     if (req.method === "POST" && url.pathname === "/api/reply") {
+      if (!isAuthenticated(req, env)) {
+        sendJson(res, 401, { error: "인증이 필요합니다." });
+        return;
+      }
+
       const body = await readJson(req);
       const result = await generateReply(body, env);
       sendJson(res, 200, result);
+      return;
+    }
+
+    if (url.pathname === "/api/auth") {
+      await handleAuth(req, res, env);
       return;
     }
 
@@ -254,9 +265,42 @@ async function readJson(req) {
   return raw ? JSON.parse(raw) : {};
 }
 
-function sendJson(res, statusCode, payload) {
+async function handleAuth(req, res, envMap) {
+  if (req.method === "GET") {
+    sendJson(res, 200, { authenticated: isAuthenticated(req, envMap) });
+    return;
+  }
+
+  if (req.method === "DELETE") {
+    sendJson(res, 200, { authenticated: false }, {
+      "Set-Cookie": buildClearAuthCookie(envMap)
+    });
+    return;
+  }
+
+  if (req.method !== "POST") {
+    sendJson(res, 405, { error: "허용되지 않는 메서드입니다." });
+    return;
+  }
+
+  const body = await readJson(req);
+  if (!isValidPassword(body.password, envMap)) {
+    sendJson(res, 401, {
+      authenticated: false,
+      error: "비밀번호가 올바르지 않습니다."
+    });
+    return;
+  }
+
+  sendJson(res, 200, { authenticated: true }, {
+    "Set-Cookie": buildAuthCookie(envMap)
+  });
+}
+
+function sendJson(res, statusCode, payload, extraHeaders = {}) {
   res.writeHead(statusCode, {
-    "Content-Type": "application/json; charset=utf-8"
+    "Content-Type": "application/json; charset=utf-8",
+    ...extraHeaders
   });
   res.end(JSON.stringify(payload));
 }
@@ -281,6 +325,73 @@ async function loadEnv(filePath) {
 
 function stringValue(value) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function isAuthenticated(req, envMap) {
+  const token = parseCookies(req.headers.cookie || "").heyum_cs_auth;
+  return token ? verifyAuthToken(token, envMap) : false;
+}
+
+function isValidPassword(password, envMap) {
+  const expected = envMap.APP_PASSWORD;
+  if (!expected || typeof password !== "string") {
+    return false;
+  }
+
+  const actualBuffer = Buffer.from(password, "utf-8");
+  const expectedBuffer = Buffer.from(expected, "utf-8");
+
+  if (actualBuffer.length !== expectedBuffer.length) {
+    return false;
+  }
+
+  return timingSafeEqual(actualBuffer, expectedBuffer);
+}
+
+function buildAuthCookie(envMap) {
+  const token = createAuthToken(envMap);
+  const parts = [
+    `heyum_cs_auth=${token}`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    "Max-Age=43200"
+  ];
+
+  return parts.join("; ");
+}
+
+function buildClearAuthCookie() {
+  return "heyum_cs_auth=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0";
+}
+
+function createAuthToken(envMap) {
+  const secret = envMap.AUTH_SECRET || envMap.APP_PASSWORD || "heyum-cs-auth";
+  return createHmac("sha256", secret).update("heyum-cs-auth").digest("hex");
+}
+
+function verifyAuthToken(token, envMap) {
+  const expected = createAuthToken(envMap);
+  const tokenBuffer = Buffer.from(token, "utf-8");
+  const expectedBuffer = Buffer.from(expected, "utf-8");
+
+  if (tokenBuffer.length !== expectedBuffer.length) {
+    return false;
+  }
+
+  return timingSafeEqual(tokenBuffer, expectedBuffer);
+}
+
+function parseCookies(rawCookie) {
+  return rawCookie
+    .split(";")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .reduce((acc, part) => {
+      const [name, ...rest] = part.split("=");
+      acc[name] = decodeURIComponent(rest.join("="));
+      return acc;
+    }, {});
 }
 
 function extractText(data) {
