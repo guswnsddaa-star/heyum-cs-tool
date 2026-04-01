@@ -34,6 +34,32 @@ const productAliases = {
   "느루혜윰": "느루혜윰 14포"
 };
 
+extendListUnique(products, [
+  "대명공진보",
+  "송강맥공진보",
+  "송강공진보 진",
+  "송강공진보(금박)",
+  "공진키즈",
+  "봉개꿀 580g"
+]);
+
+Object.assign(productAliases, {
+  "대명공진보": "대명공진보",
+  "맥공진보": "송강맥공진보",
+  "송강맥공진보": "송강맥공진보",
+  "송강공진보 진": "송강공진보 진",
+  "송강공진보진": "송강공진보 진",
+  "송강공진보": "송강공진보 진",
+  "공진키즈": "공진키즈",
+  "봉개꿀": "봉개꿀 580g",
+  "봉개꿀580g": "봉개꿀 580g",
+  "헤이루틴 abc주스": "헤이루틴 ABC주스ㅣ14팩, 30팩, 60팩, 90팩",
+  "헤이루틴 빼빼주스": "헤이루틴 빼빼주스ㅣ14팩, 30팩, 60팩, 90팩",
+  "헤이루틴 배도라지즙": "헤이루틴 어린이 NFC 배도라지즙 21팩",
+  "nfc 배도라지즙": "헤이루틴 어린이 NFC 배도라지즙 21팩",
+  "어린이 배도라지즙": "헤이루틴 어린이 NFC 배도라지즙 21팩"
+});
+
 const scenarios = [
   {
     id: "condition_recommendation",
@@ -798,8 +824,9 @@ function greeting(name, brand) {
   const intro = resolvedBrand === "songgangdang"
     ? "백년 전통의 송강당입니다."
     : "건강한 습관을 전하는 혜윰입니다.";
+  const customerLabel = name ? `${name}고객님` : "고객님";
 
-  return `안녕하세요, ${name || "고객"}님.\n${intro}`;
+  return `안녕하세요, ${customerLabel}\n${intro}`;
 }
 
 function standardClosing(managerName) {
@@ -1010,6 +1037,329 @@ const intentRoutes = [
     ]
   }
 ];
+
+enrichGuideData();
+
+function enrichGuideData() {
+  const purchaseIntent = findIntentRoute("purchase");
+  const intakeIntent = findIntentRoute("intake");
+  const deliveryIntent = findIntentRoute("delivery");
+
+  appendKeywords(purchaseIntent, [
+    "송강당",
+    "대명공진보",
+    "맥공진보",
+    "송강공진보",
+    "공진키즈",
+    "봉개꿀",
+    "임산부",
+    "산모",
+    "어린이",
+    "아이",
+    "유아",
+    "영유아",
+    "맛",
+    "당도",
+    "식감",
+    "걸쭉",
+    "과육"
+  ]);
+  appendScenarioKeywords("condition_recommendation", ["임산부", "산모", "어린이", "아이", "유아", "영유아", "알러지", "알레르기", "혈당"]);
+  appendScenarioKeywords("student_recommendation", ["공진키즈", "대명공진보", "수험생", "청소년", "학생", "자녀"]);
+
+  appendKeywords(intakeIntent, [
+    "몇 팩",
+    "몇팩",
+    "몇 포",
+    "몇포",
+    "식전",
+    "식후",
+    "냉동",
+    "상온",
+    "유통기한",
+    "소비기한",
+    "배도라지즙",
+    "abc주스",
+    "빼빼주스"
+  ]);
+  appendScenarioKeywords("how_to_take", ["식전", "식후", "식사대용", "한끼대용", "하루 2", "하루 3", "공복"]);
+  appendScenarioKeywords("storage", ["냉동", "상온", "유통기한", "소비기한", "실온"]);
+
+  appendKeywords(deliveryIntent, ["4시", "12시", "주스", "배도라지즙", "공진키즈"]);
+  appendScenarioKeywords("same_day_shipping", ["4시", "12시", "당일 출고", "언제 발송", "언제 도착"]);
+
+  overrideScenarioBuild("condition_recommendation", buildConditionRecommendationReply);
+  overrideScenarioBuild("student_recommendation", buildStudentRecommendationReply);
+  overrideScenarioBuild("how_to_take", buildHowToTakeReply);
+  overrideScenarioBuild("storage", buildStorageReply);
+  overrideScenarioBuild("same_day_shipping", buildSameDayShippingReply);
+}
+
+function extendListUnique(target, values) {
+  for (const value of values) {
+    if (!target.includes(value)) {
+      target.push(value);
+    }
+  }
+}
+
+function findIntentRoute(id) {
+  return intentRoutes.find((route) => route.id === id);
+}
+
+function findScenarioById(id) {
+  return scenarios.find((scenario) => scenario.id === id);
+}
+
+function appendKeywords(intentRoute, values) {
+  if (!intentRoute) {
+    return;
+  }
+
+  extendListUnique(intentRoute.keywords, values);
+}
+
+function appendScenarioKeywords(scenarioId, values) {
+  const routeScenario = intentRoutes
+    .flatMap((route) => route.scenarios)
+    .find((scenario) => scenario.id === scenarioId);
+
+  if (routeScenario) {
+    extendListUnique(routeScenario.keywords, values);
+  }
+}
+
+function overrideScenarioBuild(scenarioId, build) {
+  const scenario = findScenarioById(scenarioId);
+  if (scenario) {
+    scenario.build = build;
+  }
+}
+
+function normalizeGuideText(value) {
+  return cleanValue(value || "").toLowerCase();
+}
+
+function detectGuideFamily(productName, brand) {
+  const normalizedProduct = normalizeGuideText(productName);
+  const resolvedBrand = brand || cleanValue(elements.brand?.value || "") || "heyum";
+
+  if (
+    resolvedBrand === "songgangdang" ||
+    ["송강", "대명공진보", "맥공진보", "공진키즈", "봉개꿀"].some((keyword) => normalizedProduct.includes(keyword.toLowerCase()))
+  ) {
+    return "songgangdang";
+  }
+
+  if (normalizedProduct.includes("배도라지")) {
+    return "heyum-baedorajijup";
+  }
+
+  if (normalizedProduct.includes("abc주스") || normalizedProduct.includes("빼빼주스")) {
+    return "heyum-juice";
+  }
+
+  return resolvedBrand === "songgangdang" ? "songgangdang" : "default";
+}
+
+function buildConditionRecommendationReply(form) {
+  const condition = form.contextInfo || "문의주신 증상";
+  const family = detectGuideFamily(form.productName, form.brand);
+
+  if (family === "songgangdang") {
+    return [
+      greeting(form.customerName, form.brand),
+      `${condition} 관련 제품 추천 문의 주셔서 감사합니다.`,
+      "송강당은 의료용이 아닌 건강식품이기 때문에 특정 질환이나 병명 기준으로 제품을 단정해 추천드리기는 어렵습니다.",
+      "다만 평소 홍삼환 제품이 잘 맞으셨고 환 제품이 익숙하셨다면 송강공진보 진을 함께 살펴보실 수 있고, 처음 접하시는 분이시라면 대명공진보부터 시작해보시는 흐름을 많이 안내드리고 있습니다.",
+      "보통은 대명공진보로 먼저 드셔보신 뒤 몸에 잘 맞는지 확인하시고, 이후 송강맥공진보와 송강공진보 진 순서로 비교해보시는 방법을 권장드립니다.",
+      `${condition}처럼 건강 상태와 연결된 문의는 평소 진료받으시는 병원이나 전문의와 상담 후 섭취 여부를 결정해주시는 것이 가장 안전합니다.`,
+      standardClosing(form.managerName)
+    ];
+  }
+
+  if (family === "heyum-juice" || family === "heyum-baedorajijup") {
+    return [
+      greeting(form.customerName, form.brand),
+      `${condition} 관련 섭취 문의 주셔서 감사합니다.`,
+      "혜윰 주스 라인은 의료용이 아닌 식품이기 때문에 특정 질환이나 증상 기준으로 드셔도 된다고 단정해 안내드리기는 어렵습니다.",
+      family === "heyum-baedorajijup"
+        ? "배도라지즙은 배, 도라지, 생강만 넣어 착즙한 주스로 어린 자녀 간식 음료 문의가 많은 제품이지만, 연령과 컨디션에 따라 적정량은 달라질 수 있습니다."
+        : "ABC주스와 빼빼주스는 과일과 채소를 갈아 만든 과채주스라 일상 속 건강한 간식이나 식사대용 흐름으로 많이 찾아주시는 제품입니다.",
+      `${condition}처럼 컨디션이나 알러지, 임신 여부와 연결되는 문의라면 원재료 확인 후 담당 의사와 상담하신 뒤 드셔보시길 권장드립니다.`,
+      standardClosing(form.managerName)
+    ];
+  }
+
+  return [
+    greeting(form.customerName, form.brand),
+    `${condition} 관련 제품 추천 문의 주셔서 감사합니다.`,
+    "혜윰은 의료용이 아닌 건강식품이기 때문에 특정 질환이나 병명에 따라 제품을 권장드리기는 어렵습니다.",
+    `다만 혜윰의 모든 제품은 체질과 무관하게 누구나 드실 수 있도록 기획되어 있으며, ${condition}가 있으신 경우에는 평소 진료받으시는 병원이나 전문의와 상담 후 섭취를 권장드립니다.`,
+    standardClosing(form.managerName)
+  ];
+}
+
+function buildStudentRecommendationReply(form) {
+  const person = form.contextInfo || "문의주신 분";
+  const family = detectGuideFamily(form.productName, form.brand);
+
+  if (family === "songgangdang") {
+    return [
+      greeting(form.customerName, form.brand),
+      `${person}께 맞는 제품 문의 주셨네요.`,
+      "송강당은 의료용이 아닌 건강식품이기 때문에 질환 기준보다는 원재료 특성과 섭취 형태를 기준으로 안내드리고 있습니다.",
+      "평소 홍삼이 잘 맞고 환 제품이 익숙하셨다면 대명공진보를 먼저 추천드리고 있으며, 송강당 베스트셀러이자 입문용으로 많이 찾으시는 제품입니다.",
+      "혹시 환 제품이 익숙하지 않으시다면 스틱 타입의 공진키즈도 함께 비교해보실 수 있습니다. 공진키즈는 생후 12개월 이상의 영유아부터 성장기 청소년까지 많이 찾으시는 제품입니다.",
+      standardClosing(form.managerName)
+    ];
+  }
+
+  if (family === "heyum-juice" || family === "heyum-baedorajijup") {
+    return [
+      greeting(form.customerName, form.brand),
+      `${person}께 맞는 제품 문의 주셔서 감사합니다.`,
+      family === "heyum-baedorajijup"
+        ? "헤이루틴 NFC 배도라지즙은 배, 도라지, 생강만 착즙한 제품이라 어린 자녀 간식 음료나 목관리용으로 많이 찾아주시는 편입니다."
+        : "헤이루틴 ABC주스와 빼빼주스는 과일과 채소를 통째로 갈아 만든 과채주스로, 건강한 간식이나 한끼 대용 흐름으로 많이 찾으시는 제품입니다.",
+      "다만 연령, 알러지, 평소 컨디션에 따라 잘 맞는 제품과 적정량은 달라질 수 있어 원재료 확인 후 선택해주시는 것을 권장드립니다.",
+      standardClosing(form.managerName)
+    ];
+  }
+
+  return [
+    greeting(form.customerName, form.brand),
+    `${person}께 맞는 제품 문의 주셨네요.`,
+    "혜윰은 의료용이 아닌 건강식품이기 때문에 질환 기준으로 권해드리기보다는 원재료 특성과 섭취 형태를 기준으로 안내드리고 있습니다.",
+    "평소 홍삼이 몸에 잘 맞으셨고 환 제품을 자주 드셔왔다면 별빛침향환을 추천드립니다. 혜윰의 베스트셀러이자 선물용으로도 만족도가 높은 제품입니다.",
+    "혹시 환 제품이 익숙하지 않으시다면 스틱 타입 제품 위주로 비교해보시는 것도 좋습니다. 발송 전에는 최근 판매 상품과 옵션을 한 번 더 확인해 안내드려 주세요.",
+    standardClosing(form.managerName)
+  ];
+}
+
+function buildHowToTakeReply(form) {
+  const family = detectGuideFamily(form.productName, form.brand);
+  const productName = productLine(form.productName);
+
+  if (family === "songgangdang") {
+    return [
+      greeting(form.customerName, form.brand),
+      `${productName} 섭취 방법 문의 주셔서 감사합니다.`,
+      "송강당 환 제품은 언제든 섭취하셔도 무방하지만, 보통은 아침 공복에 한 알씩 씹어서 드시는 방법을 많이 안내드리고 있습니다.",
+      "청소년이나 처음 드시는 분은 먼저 소량으로 몸 상태를 살펴보시고, 어지럽거나 홧홧함처럼 평소와 다른 반응이 있으면 양을 조절해 드셔보시는 것을 권장드립니다.",
+      standardClosing(form.managerName)
+    ];
+  }
+
+  if (family === "heyum-juice") {
+    return [
+      greeting(form.customerName, form.brand),
+      `${productName} 섭취 방법 문의 주셔서 감사합니다.`,
+      "ABC주스와 빼빼주스는 과채주스이기 때문에 일반 생과일주스처럼 하루 2~3팩 정도까지 드시는 흐름으로 많이 안내드리고 있습니다.",
+      "식전, 공복, 간식, 한끼 대용처럼 편하신 시간대에 드셔도 괜찮고, 다이어트 중이시라면 식사 전 가벼운 포만감이나 저녁 대용으로 활용하시는 분들이 많습니다.",
+      "다만 평소 위가 예민하시거나 특정 원재료 알러지가 있으신 경우에는 몸 상태에 맞춰 적정량을 조절해 주세요.",
+      standardClosing(form.managerName)
+    ];
+  }
+
+  if (family === "heyum-baedorajijup") {
+    return [
+      greeting(form.customerName, form.brand),
+      `${productName} 섭취 방법 문의 주셔서 감사합니다.`,
+      "배도라지즙은 식품이라 하루 중 편하신 시간대에 드셔도 괜찮습니다.",
+      "자녀분 섭취 문의가 많아 하루 1~2포 흐름으로 드시는 후기가 많지만, 연령과 컨디션에 따라 적정량은 달라질 수 있어 배 원물의 당도를 고려해 맞춰주시는 것을 권장드립니다.",
+      standardClosing(form.managerName)
+    ];
+  }
+
+  return [
+    greeting(form.customerName, form.brand),
+    `${productName} 섭취 방법 문의 주셔서 감사합니다.`,
+    "섭취 시간은 크게 제한이 없지만, 성분 흡수를 고려하면 아침 공복에 드시는 방법을 가장 많이 안내드리고 있습니다.",
+    "환 제품은 한 알을 씹어서 드시는 방법을 권장드리며, 스틱형 제품은 휴대와 섭취가 편한 시간대에 꾸준히 드시면 좋습니다.",
+    standardClosing(form.managerName)
+  ];
+}
+
+function buildStorageReply(form) {
+  const family = detectGuideFamily(form.productName, form.brand);
+
+  if (family === "songgangdang") {
+    return [
+      greeting(form.customerName, form.brand),
+      "송강당 전 상품은 직사광선을 피해 건조하고 서늘한 곳에서 실온 보관해주시면 됩니다.",
+      "냉장 보관도 가능하지만 드시기 10분 전쯤 실온에 꺼내두셨다가 섭취하시면 조금 더 편하게 드실 수 있습니다.",
+      "개봉 후에는 가능한 빠른 시일 내에 섭취해 주세요.",
+      standardClosing(form.managerName)
+    ];
+  }
+
+  if (family === "heyum-juice") {
+    return [
+      greeting(form.customerName, form.brand),
+      "ABC주스와 빼빼주스는 갈아 만든 냉장주스라 수령 후 꼭 냉장 보관해주셔야 합니다.",
+      "냉동 보관은 원래의 식감과 품질이 달라질 수 있어 권장드리지 않고, 부득이하게 잠깐 상온 노출이 필요할 때에는 직사광선을 피해 서늘한 곳에 잠시 두시는 정도만 권장드립니다.",
+      "제조일로부터 3개월 이내 제품이며, 자세한 소비기한은 받아보신 파우치 상단 표기를 확인해 주세요.",
+      standardClosing(form.managerName)
+    ];
+  }
+
+  if (family === "heyum-baedorajijup") {
+    return [
+      greeting(form.customerName, form.brand),
+      "NFC 배도라지즙은 상온 보관이 가능한 제품입니다.",
+      "직사광선을 피해 보관해주시고, 자세한 소비기한은 받으신 파우치 상단 표기를 확인해 주세요.",
+      "제조일 기준 1년 보관 제품으로 안내드리고 있습니다.",
+      standardClosing(form.managerName)
+    ];
+  }
+
+  return [
+    greeting(form.customerName, form.brand),
+    "혜윰 전 상품은 직사광선을 피해 건조하고 서늘한 곳에서 실온 보관해주시면 됩니다.",
+    "다만 환 제품을 깨물었거나 개봉한 상태라면 냉장 보관을 권장드리며, 개봉 후에는 가능한 빠른 시일 내 섭취해 주세요.",
+    "냉장 보관 후 드실 때에는 약 10분 정도 실온에 두었다가 드시면 더 편하게 섭취하실 수 있습니다.",
+    standardClosing(form.managerName)
+  ];
+}
+
+function buildSameDayShippingReply(form) {
+  const family = detectGuideFamily(form.productName, form.brand);
+
+  if (family === "songgangdang") {
+    return [
+      greeting(form.customerName, form.brand),
+      "송강당 상품은 평일 기준 오후 4시 이전 주문 건까지 당일 출고로 안내드리고 있습니다.",
+      "다만 택배사 수거 상황이나 내부 마감 상황에 따라 세부 일정은 달라질 수 있어 출고 전 최종 확인 후 안내드리는 것이 가장 안전합니다.",
+      standardClosing(form.managerName)
+    ];
+  }
+
+  if (family === "heyum-juice") {
+    return [
+      greeting(form.customerName, form.brand),
+      "헤이루틴 ABC주스와 빼빼주스는 냉장상품이라 평일 12시까지 결제 완료된 주문 건은 당일 출고로 안내드리고 있습니다.",
+      "택배사 사정에 따라 차이는 있지만 보통 다음 날 수령하시는 경우가 많습니다.",
+      standardClosing(form.managerName)
+    ];
+  }
+
+  if (family === "heyum-baedorajijup") {
+    return [
+      greeting(form.customerName, form.brand),
+      "헤이루틴 NFC 배도라지즙도 평일 12시 이전 결제 건은 당일 출고로 안내드리고 있습니다.",
+      "배도라지즙은 일반택배로 발송되어 택배사 사정에 따라 보통 1~2일 내 수령하시는 편입니다.",
+      standardClosing(form.managerName)
+    ];
+  }
+
+  return [
+    greeting(form.customerName, form.brand),
+    "평일 기준 오후 4시 이전 주문 건은 당일 출고로 안내드리고 있습니다.",
+    "다만 택배사 수거 상황이나 내부 마감 상황에 따라 세부 일정은 달라질 수 있어 출고 전 최종 확인 후 안내드리면 가장 안전합니다.",
+    standardClosing(form.managerName)
+  ];
+}
 
 function analyzeQuestion(question, form) {
   if (!question) {
